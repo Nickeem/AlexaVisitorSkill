@@ -1,0 +1,196 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "i am a visitor",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "HelloWorldIntent",
+          "slots": [],
+          "samples": [
+            "hello",
+            "how are you",
+            "say hi world",
+            "say hi",
+            "hi",
+            "say hello world",
+            "say hello"
+          ]
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "RecordVisitorIntent",
+          "slots": [
+            {
+              "name": "ID",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "{ID}",
+                "My ID is {ID}"
+              ],
+              "multipleValues": {
+                "enabled": false
+              }
+            }
+          ],
+          "samples": [
+            "{ID}",
+            "My ID is {ID}"
+          ]
+        },
+        {
+          "name": "RecordNewVisitorIntent",
+          "slots": [
+            {
+              "name": "name",
+              "type": "AMAZON.FirstName",
+              "samples": [
+                "It is {name}",
+                "{name}",
+                "My name is {name}"
+              ]
+            },
+            {
+              "name": "phone_number",
+              "type": "AMAZON.PhoneNumber",
+              "samples": [
+                "It is {phone_number}",
+                "My number is {phone_number}",
+                "My phone number is {phone_number}",
+                "{phone_number}"
+              ]
+            }
+          ],
+          "samples": [
+            "my phone number is {phone_number}",
+            "{phone_number}",
+            "my name is {name}",
+            "{name}"
+          ]
+        },
+        {
+          "name": "RandomVisitorIntent",
+          "slots": [],
+          "samples": [
+            "I have no ID",
+            "I don\u0027t have one",
+            "I don\u0027t have an ID"
+          ]
+        }
+      ],
+      "types": []
+    },
+    "dialog": {
+      "intents": [
+        {
+          "name": "RecordVisitorIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "ID",
+              "type": "AMAZON.NUMBER",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.498368838467.1158919898686"
+              }
+            }
+          ]
+        },
+        {
+          "name": "RecordNewVisitorIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "name",
+              "type": "AMAZON.FirstName",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.1485972005474.330987748113"
+              }
+            },
+            {
+              "name": "phone_number",
+              "type": "AMAZON.PhoneNumber",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.1485972005474.1352110713870"
+              }
+            }
+          ]
+        }
+      ],
+      "delegationStrategy": "ALWAYS"
+    },
+    "prompts": [
+      {
+        "id": "Elicit.Slot.498368838467.1158919898686",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What is your ID?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.190019118374.1144818882113",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What is your phone number?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.190019118374.373267083654",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What is your name?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.1485972005474.330987748113",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "what is your name?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.1485972005474.1352110713870",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What is your phone number?"
+          }
+        ]
+      }
+    ]
+  },
+  "version": "14"
+}
