@@ -85,13 +85,13 @@ const RecordVisitorIntentHandler = {
             } else {
               //results = data.Items;
                 //console.log("Query succeeded.");
-                console.log("data = " +  JSON.stringify(data,null,2));
+                //console.log("data = " +  JSON.stringify(data,null,2));
                 data.Items.forEach(function(item) {
                     //console.log(" -", item.id + ": " + item.month);
                     results = item;
                 });
             }
-            console.log(results);
+            //console.log(results);
             if (Object.keys(results).length > 0) {
                 let ddb = new AWS.DynamoDB({apiVersion: '2012-10-08'});
                 AWS.config.update({region: 'us-east-1'});
@@ -173,7 +173,7 @@ const RecordNewVisitorIntentHandler = {
              console.log("database put error");
            console.log(err);
          } else{
-           console.log('Success');
+           console.log('Success in adding new visitor');
          }
        }); 
        
@@ -198,7 +198,7 @@ const RecordNewVisitorIntentHandler = {
                console.log("database put error");
              console.log(err);
            } else{
-             console.log('Successfully documented visitor');
+             console.log('Successfully documented new visitor');
            }
          });
         
@@ -265,16 +265,19 @@ const VisitorQueryIntentHandler = {
         
         // sot values and defaults
         const slot_values = handlerInput.requestEnvelope.request.intent.slots;
-        var date = slot_values.date ? slot_values.date.value : currentDate;
-        var start_time = slot_values.start_time ? slot_values.start_time.value : "0:01";
-        var end_time = slot_values.end_time ? slot_values.end_time.value : "23:59";
         
+        var date = (slot_values.date.value) ? slot_values.date.value : currentDate;
+        var start_time = (slot_values.start_time.value) ? slot_values.start_time.value : "0:01";
+        //console.log(slot_values);
+        //console.log("after: "+start_time)
+        var end_time = (slot_values.end_time.value) ? slot_values.end_time.value : "23:59";
+        console.log ("date = "+date);
         var params = {
-            TableName : "Visitor_Info",
-            KeyConditionExpression: "#pkey = :value AND #skey BETWEEN :sortkeyval1 AND :sortkeyval2",
+            TableName : "Visitor_TimeStamps",
+            KeyConditionExpression: "#pkey = :value AND #sskey BETWEEN :sortkeyval1 AND :sortkeyval2",
             ExpressionAttributeNames:{
                 "#pkey": "Date",
-                "#skey": "Time"
+                "#sskey": "Time"
             },
             ExpressionAttributeValues: {
                 ":value": date,
@@ -291,16 +294,18 @@ const VisitorQueryIntentHandler = {
             if (err) {
                 console.error("Unable to query. Error:", JSON.stringify(err, null, 2));
             } else {
+                console.log(data);
               results = data.Items;
             }
             var results_csv_format = "Date, Time, VisitorID\n";
-            if (Object.keys(results).length > 0) {
-                for (let elem in results) {
+            if (results.length > 0) {
+                for (let elem of results) {
                   results_csv_format += Object.values(elem).join(", ");
                   results_csv_format += "\n";
                 }
                 let results_normal_format = results_csv_format.replace(/, /g, "\t\t");
-                speakOutput = `Thanks, you can enter the office ${results}`;
+                console.log(results_normal_format);
+                speakOutput = `The information was sent to you`;
             }
             else {
                 speakOutput = "No information was found";
@@ -433,10 +438,10 @@ exports.handler = Alexa.SkillBuilders.custom()
     .withApiClient(new Alexa.DefaultApiClient())
     .addRequestHandlers(
         LaunchRequestHandler,
+        VisitorQueryIntentHandler,
         RandomVisitorIntentHandler, 
         RecordNewVisitorIntentHandler,
         RecordVisitorIntentHandler,
-        VisitorQueryIntentHandler,
         HelloWorldIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
