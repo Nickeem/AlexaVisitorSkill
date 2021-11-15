@@ -48,9 +48,9 @@ const RecordVisitorIntentHandler = {
         
         const currentDateTime = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Barbados"})); // or {timeZone: userTimeZone}
         
-        var currentDate = currentDateTime.getFullYear() + "-" + (currentDateTime.getMonth()+1) +  "-" + currentDateTime.getDate();
+        var currentDate = currentDateTime.getFullYear() + "-" + (currentDateTime.getMonth()+1) +  "-" + (currentDateTime.getDate()).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
         var cH = currentDateTime.getHours(); // current Hour
-        var cM = currentDateTime.getMinutes(); // current Minute
+        var cM = (currentDateTime.getMinutes()).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false}); // current Minute
         var currentTime = cH + ":" + cM
         //var cS = currentDateTime.getSeconds(); // current Second
         
@@ -60,7 +60,7 @@ const RecordVisitorIntentHandler = {
         };
         
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);  //commit the sessions attributes
-        
+        console.log(handlerInput.requestEnvelope.request.intent.slots);
         var AWS = require("aws-sdk");
         
         var docClient = new AWS.DynamoDB.DocumentClient();
@@ -121,10 +121,12 @@ const RecordVisitorIntentHandler = {
                } else
                {
                   speakOutput = `Thanks, you can enter the office ${results.Name}`; 
+                  return handlerInput.responseBuilder
+                    .speak(speakOutput)
                }
             }
             else {
-                speakOutput = "What is your name?";
+                speakOutput = "What is your full name?";
                 
             }
            
@@ -149,9 +151,12 @@ const RecordNewVisitorIntentHandler = {
     async handle(handlerInput) {
         var session_attributes = handlerInput.attributesManager.getSessionAttributes();
         
-        const id = session_attributes.ID; 
+        const id = session_attributes.ID;
         const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
+        const last_name = handlerInput.requestEnvelope.request.intent.slots.lastname.value;
+        const fullname = name.charAt(0).toUpperCase() + name.slice(1) + " "+ last_name.charAt(0).toUpperCase() + last_name.slice(1);
         const phone_number = handlerInput.requestEnvelope.request.intent.slots.phone_number.value;
+        const visitor_address = handlerInput.requestEnvelope.request.intent.slots.Address.value;
         
         
         //dynamodb
@@ -163,7 +168,8 @@ const RecordNewVisitorIntentHandler = {
          TableName: 'Visitor_Info', //place the correct table name associaded with your alexa hosted skill here as was demonstrated in the video demonstration.
          Item: {
              'Visitor ID' : {S: id},
-             'Name' : {S: name},
+             'Name' : {S: fullname},
+             'Address' : {S: visitor_address}, // new line
              'Phone Number' : {S: phone_number.toString()},
          }
        };
@@ -179,9 +185,9 @@ const RecordNewVisitorIntentHandler = {
        
        // time entered the office
         const currentDateTime = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Barbados"}));
-        var currentDate = currentDateTime.getFullYear() + "-" + (currentDateTime.getMonth()+1) +  "-" + currentDateTime.getDate();
+        var currentDate = currentDateTime.getFullYear() + "-" + (currentDateTime.getMonth()+1) +  "-" + (currentDateTime.getDate()).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
         var cH = currentDateTime.getHours(); // current Hour
-        var cM = currentDateTime.getMinutes(); // current Minute
+        var cM = (currentDateTime.getMinutes()).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false}); // current Minute
         var currentTime = cH + ":" + cM;
         
         var params = {
@@ -231,10 +237,8 @@ const RandomVisitorIntentHandler = {
             "ID":id,
         };
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-                    
         
-        
-        const speakOutput = 'What is your name?';
+        const speakOutput = 'What is your full name?';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -248,7 +252,7 @@ const VisitorQueryIntentHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'VisitorQueryIntent';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         var speakOutput;
         
         var session_attributes = handlerInput.attributesManager.getSessionAttributes();
@@ -261,17 +265,32 @@ const VisitorQueryIntentHandler = {
         }
         
         const currentDateTime = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Barbados"}));
-        var currentDate = currentDateTime.getFullYear() + "-" + (currentDateTime.getMonth()+1) +  "-" + currentDateTime.getDate();
+        var currentDate = currentDateTime.getFullYear() + "-" + (currentDateTime.getMonth()+1) +  "-" + (currentDateTime.getDate()).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
         
         // sot values and defaults
         const slot_values = handlerInput.requestEnvelope.request.intent.slots;
-        
+        console.log(slot_values);
         var date = (slot_values.date.value) ? slot_values.date.value : currentDate;
         var start_time = (slot_values.start_time.value) ? slot_values.start_time.value : "0:01";
-        //console.log(slot_values);
-        //console.log("after: "+start_time)
+
         var end_time = (slot_values.end_time.value) ? slot_values.end_time.value : "23:59";
         console.log ("date = "+date);
+        
+        const nodemailer = require("nodemailer");
+        var transporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          //host: 'mail.gmx.com',
+          port: 465,
+          secure: true, 
+          //service: 'gmail',
+          auth: {
+            user: 'enteryours@gmail.com',
+            pass: 'password'
+            //user: 'codepimps@gmx.com',
+            //pass: ''
+          }
+      });
+      
         var params = {
             TableName : "Visitor_TimeStamps",
             KeyConditionExpression: "#pkey = :value AND #sskey BETWEEN :sortkeyval1 AND :sortkeyval2",
@@ -289,6 +308,9 @@ const VisitorQueryIntentHandler = {
         var AWS = require("aws-sdk");
         var docClient = new AWS.DynamoDB.DocumentClient();
         var results = {};
+        var other_results = "";
+        var batch_results_normal_format = "";
+        var batch_results_csv_format = "Visitor ID, Address, Name, Phone Number\n";
         
         return  docClient.query(params, function(err,data) {
             if (err) {
@@ -297,16 +319,78 @@ const VisitorQueryIntentHandler = {
                 console.log(data);
               results = data.Items;
             }
+            var visitor_keys = {}
+            var visitors = [];
             var results_csv_format = "Date, Time, VisitorID\n";
             if (results.length > 0) {
                 for (let elem of results) {
-                  results_csv_format += Object.values(elem).join(", ");
-                  results_csv_format += "\n";
+                    visitor_keys[elem.Visitor_ID] = "";// variable to put visitor information in
+                    results_csv_format += Object.values(elem).join(", ");
+                    results_csv_format += "\n";
                 }
                 let results_normal_format = results_csv_format.replace(/, /g, "\t\t");
-                console.log(results_normal_format);
+                for (let key of Object.keys(visitor_keys)) {
+                    visitors.push({'Visitor ID': `${key}`});   
+                }
+               console.log("key array: "+Object.keys(visitor_keys));
+                var batch_params = {
+                    RequestItems: {
+                        'Visitor_Info': {
+                            Keys: visitors,
+                            //[{'Visitor ID': '123456'}],
+                            ProjectionExpression: '#visitor_id, Address, #visitor_name, #visitor_pnumber',
+                            ExpressionAttributeNames:{
+                                "#visitor_id": "Visitor ID",
+                                "#visitor_name": "Name",
+                                "#visitor_pnumber": "Phone Number"
+                            }
+                        }
+                    }
+                };
+                        
+                
+                docClient.batchGet(batch_params, function(err, data) {
+                  if (err) {
+                    console.log("Error", err);
+                  } else {
+                        let batch_results = data.Responses.Visitor_Info;
+                        console.log("batch data: "+JSON.stringify(data.Responses.Visitor_Info));
+                        if (batch_results.length > 0) {
+                            for (let elem of batch_results) {
+                                console.log(elem);
+                                batch_results_csv_format +=  Object.values(elem).join(", ");
+                                batch_results_csv_format += "\n";
+                            }
+                            //console.log("formatted data:" + batch_results_csv_format);
+                            batch_results_normal_format += batch_results_csv_format.replace(/, /g, "\t\t\t\t\t");
+                            //console.log("formatted data:" + batch_results_normal_format);
+                            //results_normal_format += results_csv_format;
+                            //console.log(batch_results_normal_format);
+                            
+                            var mailOptions = {
+                  from: 'youremail@gmail.com',
+                  to: 'realnigelunos@gmail.com',
+                  subject: `Visitors who entered the office ${date} between ${start_time} and ${end_time}`,
+                  text: (results_normal_format + "\n\n" + batch_results_normal_format)
+              };
+                
+              transporter.sendMail(mailOptions, function(error, info){
+                  if (error) {
+                    console.log(error);
+                  } else {
+                    console.log('Email sent: ' + info.response);
+                  }
+              }); 
+                    }
+                  }
+                });
+                //console.log("csv results: "+batch_results_csv_format)
+                //console.log("normal results: "+batch_results_normal_format);
+                console.log(results_normal_format );
+            // testing email feature
+              
                 speakOutput = `The information was sent to you`;
-            }
+            } // end of results.length
             else {
                 speakOutput = "No information was found";
                 
